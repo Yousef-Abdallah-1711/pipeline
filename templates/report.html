@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__PAGE_TITLE__</title>
+<style>
+:root {
+  --bg:#f5f2ea; --surface:#ffffff; --surface-2:#efe9db; --ink:#1e2433; --ink-muted:#5b6475;
+  --border:#ddd4bf; --primary:#1f3a5f; --primary-2:#355a86; --accent:#1f8a5f; --accent-2:#2fae79;
+  --tierA:#b23a3a; --tierB:#c0722a; --tierC:#a98a1f; --tierD:#6b7280;
+  --font-body:'Tajawal',ui-sans-serif,system-ui,sans-serif; --font-mono:'IBM Plex Mono',ui-monospace,monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#15181f; --surface:#1c2029; --surface-2:#262b36; --ink:#e7e5de; --ink-muted:#9aa2b3;
+    --border:#333948; --primary:#6f9bd4; --primary-2:#8fb4e6; --accent:#3fcf98; --accent-2:#5fe0ad;
+    --tierA:#e2685f; --tierB:#e0974a; --tierC:#d4b84a; --tierD:#9aa2b3;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#15181f; --surface:#1c2029; --surface-2:#262b36; --ink:#e7e5de; --ink-muted:#9aa2b3;
+  --border:#333948; --primary:#6f9bd4; --primary-2:#8fb4e6; --accent:#3fcf98; --accent-2:#5fe0ad;
+  --tierA:#e2685f; --tierB:#e0974a; --tierC:#d4b84a; --tierD:#9aa2b3;
+  color-scheme: dark;
+}
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--ink); font-family:var(--font-body); margin:0; padding:0 16px; line-height:1.65; direction:rtl; }
+.wrap { max-width:1300px; margin:0 auto; }
+h1,h2,h3,h4 { color:var(--ink); font-weight:700; }
+a { color:var(--primary-2); }
+.muted { color:var(--ink-muted); }
+.mono { font-family:var(--font-mono); font-size:.85em; direction:ltr; unicode-bidi:embed; display:inline-block; }
+button { font-family:var(--font-body); cursor:pointer; }
+
+header.top { padding:30px 0 20px; border-bottom:3px solid var(--primary); }
+header.top .eyebrow { text-transform:uppercase; letter-spacing:.06em; font-size:.78rem; color:var(--accent); font-weight:700; }
+header.top h1 { font-size:clamp(1.6rem,3.6vw,2.3rem); margin:.3rem 0 .4rem; }
+header.top p { color:var(--ink-muted); max-width:70ch; }
+
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:12px; margin:20px 0; }
+.card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+.card .n { font-family:var(--font-mono); font-size:1.5rem; font-weight:700; color:var(--primary); }
+.card .l { font-size:.78rem; color:var(--ink-muted); }
+
+.toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:18px 0 12px; }
+.toolbar input[type=text] { padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); min-width:220px; }
+.toolbar select { padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); }
+.toolbar button.action { padding:8px 14px; border-radius:8px; border:1px solid var(--primary); background:var(--primary); color:#fff; }
+.toolbar button.ghost { padding:8px 14px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--ink); }
+
+.table-wrap { overflow-x:auto; border:1px solid var(--border); border-radius:10px; }
+table { border-collapse:collapse; width:100%; background:var(--surface); font-size:.92rem; }
+th, td { padding:9px 12px; border-bottom:1px solid var(--border); text-align:right; white-space:nowrap; }
+thead th { background:var(--surface-2); position:sticky; top:0; cursor:pointer; }
+tbody tr { cursor:pointer; }
+tbody tr:hover { background:var(--surface-2); }
+.badge { display:inline-block; font-size:.74rem; font-weight:700; padding:2px 9px; border-radius:999px; }
+.tier-A { background:color-mix(in srgb, var(--tierA) 18%, transparent); color:var(--tierA); border:1px solid var(--tierA); }
+.tier-B { background:color-mix(in srgb, var(--tierB) 18%, transparent); color:var(--tierB); border:1px solid var(--tierB); }
+.tier-C { background:color-mix(in srgb, var(--tierC) 18%, transparent); color:var(--tierC); border:1px solid var(--tierC); }
+.tier-D { background:color-mix(in srgb, var(--tierD) 18%, transparent); color:var(--tierD); border:1px solid var(--tierD); }
+select.status-select { font-size:.82rem; padding:4px 6px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--ink); }
+
+#overlay { position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:flex-start; justify-content:center; padding:30px 16px; z-index:50; overflow-y:auto; }
+#overlay.open { display:flex; }
+#panel { background:var(--surface); border-radius:14px; max-width:760px; width:100%; padding:24px; margin-bottom:40px; }
+#panel h2 { margin-top:0; }
+#panel .close-btn { float:left; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:6px 12px; }
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:14px 0; }
+@media (max-width:640px) { .detail-grid { grid-template-columns:1fr; } }
+.detail-grid img { max-width:100%; border-radius:8px; border:1px solid var(--border); }
+.msg-box { background:var(--surface-2); border-radius:8px; padding:12px 14px; margin:8px 0; position:relative; }
+.msg-box .copy-btn { position:absolute; left:10px; top:10px; font-size:.72rem; padding:3px 8px; border-radius:6px; border:1px solid var(--border); background:var(--surface); }
+.wa-btn { display:inline-block; background:#1f8a5f; color:#fff; padding:8px 16px; border-radius:8px; text-decoration:none; margin-top:6px; }
+.section-label { font-size:.76rem; text-transform:uppercase; letter-spacing:.05em; color:var(--accent); font-weight:700; margin:16px 0 4px; }
+textarea.notes-area { width:100%; min-height:60px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--ink); padding:8px; font-family:var(--font-body); }
+footer.page { border-top:1px solid var(--border); padding:20px 0 50px; color:var(--ink-muted); font-size:.85rem; }
+.obj-item { margin-bottom:8px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="eyebrow">Lead Hunter — تقرير عملاء محتملين</div>
+    <h1>__PAGE_H1__</h1>
+    <p>__PAGE_INTRO__</p>
+    <div class="cards">
+__CARDS_HTML__
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="بحث بالاسم أو العنوان أو الهاتف…">
+    <select id="filterTier"><option value="">كل الأولويات</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
+    <select id="filterWebsite"><option value="">كل الحالات</option><option value="yes">عنده موقع</option><option value="no">بدون موقع</option></select>
+    <select id="filterStatus"><option value="">كل حالات المتابعة</option></select>
+    <button class="action" id="exportCsv">تصدير CSV</button>
+    <button class="ghost" id="exportJson">تصدير JSON</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="leadsTable">
+      <thead><tr>
+        <th data-key="lead_id">#</th><th data-key="name">الاسم</th><th data-key="score.tier">الأولوية</th>
+        <th data-key="score.total_score">النتيجة</th><th data-key="rating">التقييم</th><th data-key="reviews">المراجعات</th>
+        <th data-key="phone">الهاتف</th><th data-key="has_website">الموقع</th><th>الحالة</th>
+      </tr></thead>
+      <tbody id="leadsBody"></tbody>
+    </table>
+  </div>
+
+  <footer class="page">
+    بيانات عامة من خرائط Google فقط. لم يتم إرسال أي رسائل أو طلبات فعلية لأي عمل تجاري أثناء هذا البحث. مسودات الرسائل أدناه للمراجعة اليدوية قبل الإرسال فقط.
+  </footer>
+</div>
+
+<div id="overlay"><div id="panel"></div></div>
+
+<script>
+const LEADS = __DATA_JSON__;
+const STATUS_OPTIONS = ["جديد","تم التواصل","رد","مهتم","عرض سعر","تم التعاقد","مرفوض"];
+
+function storageGet(key) {
+  try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch(e) { return {}; }
+}
+function storageSet(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch(e) {}
+}
+let statusMap = storageGet("lh_status");
+let notesMap = storageGet("lh_notes");
+
+function getStatus(id) { return statusMap[id] || "جديد"; }
+function getNotes(id) { return notesMap[id] || ""; }
+function setStatus(id, v) { statusMap[id] = v; storageSet("lh_status", statusMap); }
+function setNotes(id, v) { notesMap[id] = v; storageSet("lh_notes", notesMap); }
+
+function getPath(obj, path) {
+  return path.split('.').reduce((o,k)=> (o && o[k] !== undefined) ? o[k] : null, obj);
+}
+
+let currentSort = {key: "score.total_score", asc: false};
+let currentFiltered = LEADS.slice();
+
+function applyFilters() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const tier = document.getElementById('filterTier').value;
+  const web = document.getElementById('filterWebsite').value;
+  const st = document.getElementById('filterStatus').value;
+  currentFiltered = LEADS.filter(l => {
+    if (tier && (l.score.tier || '') !== tier) return false;
+    if (web === 'yes' && !l.has_website) return false;
+    if (web === 'no' && l.has_website) return false;
+    if (st && getStatus(l.lead_id) !== st) return false;
+    if (q) {
+      const hay = (l.name + ' ' + (l.address||'') + ' ' + (l.phone||'')).toLowerCase();
+      if (hay.indexOf(q) === -1) return false;
+    }
+    return true;
+  });
+  sortAndRender();
+}
+
+function sortAndRender() {
+  const {key, asc} = currentSort;
+  currentFiltered.sort((a,b) => {
+    let av = getPath(a, key), bv = getPath(b, key);
+    if (av == null) av = '';
+    if (bv == null) bv = '';
+    let cmp;
+    if (typeof av === 'number' && typeof bv === 'number') cmp = av - bv;
+    else cmp = String(av).localeCompare(String(bv), 'ar');
+    return asc ? cmp : -cmp;
+  });
+  render();
+}
+
+function render() {
+  const tbody = document.getElementById('leadsBody');
+  tbody.innerHTML = '';
+  currentFiltered.forEach(l => {
+    const tr = document.createElement('tr');
+    tr.dataset.id = l.lead_id;
+    tr.innerHTML = `
+      <td class="mono">${l.lead_id}</td>
+      <td>${l.name}</td>
+      <td><span class="badge tier-${l.score.tier||'D'}">${l.score.tier||'—'}</span></td>
+      <td class="mono">${l.score.total_score ?? '—'}</td>
+      <td>${l.rating || 'غير متوفر'}</td>
+      <td>${l.reviews || '0'}</td>
+      <td class="mono">${l.phone || 'غير متوفر'}</td>
+      <td>${l.has_website ? 'نعم' : 'لا'}</td>
+      <td></td>
+    `;
+    const statusTd = tr.querySelector('td:last-child');
+    const sel = document.createElement('select');
+    sel.className = 'status-select';
+    STATUS_OPTIONS.forEach(opt => {
+      const o = document.createElement('option');
+      o.value = opt; o.textContent = opt;
+      if (getStatus(l.lead_id) === opt) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('click', e => e.stopPropagation());
+    sel.addEventListener('change', e => { setStatus(l.lead_id, e.target.value); });
+    statusTd.appendChild(sel);
+    tr.addEventListener('click', () => openDetail(l.lead_id));
+    tbody.appendChild(tr);
+  });
+  const filterStatusSel = document.getElementById('filterStatus');
+  if (filterStatusSel.options.length <= 1) {
+    STATUS_OPTIONS.forEach(opt => {
+      const o = document.createElement('option'); o.value = opt; o.textContent = opt;
+      filterStatusSel.appendChild(o);
+    });
+  }
+}
+
+function copyText(txt, btn) {
+  const done = () => { const old = btn.textContent; btn.textContent = 'تم النسخ ✓'; setTimeout(()=>btn.textContent=old, 1500); };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(done).catch(() => fallbackCopy(txt, done));
+  } else { fallbackCopy(txt, done); }
+}
+function fallbackCopy(txt, cb) {
+  const ta = document.createElement('textarea');
+  ta.value = txt; document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta); if (cb) cb();
+}
+
+function msgBox(label, text) {
+  const id = 'm' + Math.random().toString(36).slice(2);
+  return `<div class="msg-box"><button class="copy-btn" onclick="copyText(document.getElementById('${id}').textContent, this)">نسخ</button>
+    <div class="section-label">${label}</div><div id="${id}" style="white-space:pre-wrap">${text}</div></div>`;
+}
+
+function openDetail(id) {
+  const l = LEADS.find(x => x.lead_id === id);
+  const p = l.pack || {};
+  const a = l.audit || {};
+  const s = l.score || {};
+  const panel = document.getElementById('panel');
+  const waNumber = (l.phone || '').replace(/[^0-9]/g,'');
+  const waText = encodeURIComponent(p.whatsapp_message || '');
+  const waLink = waNumber ? `https://wa.me/${waNumber.startsWith('0') ? '2'+waNumber : waNumber}?text=${waText}` : null;
+
+  let screenshotHtml = '';
+  if (l.has_screenshot) {
+    screenshotHtml = `<img src="screenshots/${l.lead_id}.png" alt="لقطة شاشة للموقع">`;
+  } else {
+    screenshotHtml = `<p class="muted">لا توجد لقطة شاشة (${l.has_website ? 'الموقع غير متاح وقت الفحص' : 'لا يوجد موقع إلكتروني'}).</p>`;
+  }
+
+  let auditHtml = '';
+  if (a.audited && a.reachable) {
+    auditHtml = `
+      <ul>
+        <li>HTTPS صالح: ${a.https_valid ? 'نعم' : 'لا'} ${a.mixed_content ? '(يوجد محتوى مختلط HTTP داخل صفحة HTTPS)' : ''}</li>
+        <li>وسم viewport للجوال: ${a.mobile_viewport_tag ? 'موجود' : 'غير موجود'}</li>
+        <li>ثنائي اللغة (عربي/إنجليزي): ${a.bilingual_ar_en ? 'نعم' : 'لا'}</li>
+        <li>نموذج طلب/تواصل: ${a.has_form ? 'موجود' : 'غير موجود'}</li>
+        <li>حقل رفع ملفات: ${a.has_file_upload_field ? 'موجود' : 'غير موجود'}</li>
+        <li>زر واتساب: ${a.has_whatsapp ? 'موجود' : 'غير موجود'}</li>
+        <li>رابط اتصال مباشر (tel:): ${a.has_tel_link ? 'موجود' : 'غير موجود'}</li>
+        <li>عنوان الصفحة: ${a.title ? a.title : 'غير متوفر'}${a.title_generic ? ' (عام جدًا)' : ''}</li>
+        <li>وصف ميتا: ${a.meta_description_present ? 'موجود' : 'غير موجود'}</li>
+        <li>عدد H1: ${a.h1_count ?? 'غير متوفر'}</li>
+        <li>بيانات بنيوية (Schema): ${a.structured_data_present ? 'موجودة' : 'غير موجودة'}</li>
+        <li>خريطة الموقع (sitemap.xml): ${a.sitemap_present ? 'موجودة' : 'غير موجودة'}</li>
+        <li>سنة حقوق النشر الظاهرة: ${a.copyright_year || 'غير متوفر'}</li>
+        <li>المنصة المستخدمة: ${a.platform || 'غير متوفر'}</li>
+        <li>وقت استجابة الخادم (قياس حقيقي، ليس Lighthouse): ${a.server_response_time_s} ثانية</li>
+        <li>بريد إلكتروني ظاهر بالموقع: ${a.public_email || 'غير متوفر'}</li>
+      </ul>`;
+  } else if (a.audited && !a.reachable) {
+    auditHtml = `<p>الموقع <span class="mono">${l.website || ''}</span> لم يستجب أثناء الفحص (غير متاح).</p>`;
+  } else {
+    auditHtml = `<p class="muted">لا يوجد موقع إلكتروني حقيقي لفحصه.</p>`;
+  }
+
+  const scoreBreakdown = `
+    <ul>
+      <li>قوة النشاط التجاري: ${s.business_strength} / 40</li>
+      <li>ضعف الموقع الإلكتروني (فرصة): ${s.website_weakness} / 50</li>
+      <li>إمكانية التواصل: ${s.contactability} / 10</li>
+      <li><strong>الإجمالي: ${s.total_score} / 100 — أولوية ${s.tier}</strong></li>
+    </ul>`;
+
+  const objectionsHtml = (p.objections||[]).map(o => `<div class="obj-item"><strong>اعتراض:</strong> ${o.objection}<br><strong>الرد:</strong> ${o.answer}</div>`).join('');
+
+  panel.innerHTML = `
+    <button class="close-btn" onclick="document.getElementById('overlay').classList.remove('open')">إغلاق ✕</button>
+    <h2>${l.name}</h2>
+    <p class="muted">${l.category || ''} ${l.address ? '· ' + l.address : ''}</p>
+    <p><span class="mono">${l.phone || 'غير متوفر'}</span> ${l.website ? '· <a href="'+l.website+'" target="_blank" rel="noopener">'+l.website+'</a>' : (l.facebook ? '· <a href="'+l.facebook+'" target="_blank" rel="noopener">فيسبوك</a>' : '· بدون موقع')}</p>
+
+    <div class="detail-grid">
+      <div><div class="section-label">تفصيل النتيجة</div>${scoreBreakdown}</div>
+      <div><div class="section-label">لقطة شاشة (موبايل)</div>${screenshotHtml}</div>
+    </div>
+
+    <div class="section-label">نتائج الفحص التقني</div>
+    ${auditHtml}
+
+    <div class="section-label">الملخص</div>
+    <p>${p.summary || ''}</p>
+
+    <div class="section-label">أهم 3 مشاكل</div>
+    <ul>${(p.top_3_problems||[]).map(x=>'<li>'+x+'</li>').join('')}</ul>
+
+    <div class="section-label">الأثر على العمل</div>
+    <p>${p.business_impact || ''}</p>
+
+    ${msgBox('رسالة واتساب أولى (مسودة للمراجعة)', p.whatsapp_message || '')}
+    ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener">فتح واتساب (بدون إرسال تلقائي)</a>` : ''}
+
+    ${msgBox('البريد الإلكتروني — الموضوع', p.email_subject || '')}
+    ${msgBox('البريد الإلكتروني — النص', p.email_body || '')}
+    ${msgBox('متابعة بعد 3 أيام', p.follow_up_day3 || '')}
+    ${msgBox('متابعة بعد 7 أيام', p.follow_up_day7 || '')}
+    ${msgBox('متابعة أخيرة بعد 14 يوم', p.follow_up_day14 || '')}
+    ${msgBox('افتتاحية المكالمة', p.call_opener || '')}
+
+    <div class="section-label">اعتراضات متوقعة وردود</div>
+    ${objectionsHtml}
+
+    <div class="section-label">العرض المقترح والسعر</div>
+    <p>${p.recommended_offer || ''}</p>
+    <p class="muted">أفضل قناة: ${p.best_channel || ''} · أفضل وقت: ${p.best_time || ''}</p>
+
+    <div class="section-label">ملاحظات</div>
+    <textarea class="notes-area" id="notesArea">${getNotes(l.lead_id)}</textarea>
+  `;
+  document.getElementById('notesArea').addEventListener('input', e => setNotes(l.lead_id, e.target.value));
+  document.getElementById('overlay').classList.add('open');
+}
+
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target.id === 'overlay') e.target.classList.remove('open');
+});
+
+document.getElementById('search').addEventListener('input', applyFilters);
+document.getElementById('filterTier').addEventListener('change', applyFilters);
+document.getElementById('filterWebsite').addEventListener('change', applyFilters);
+document.getElementById('filterStatus').addEventListener('change', applyFilters);
+
+document.querySelectorAll('#leadsTable thead th').forEach(th => {
+  th.addEventListener('click', () => {
+    const key = th.dataset.key;
+    if (!key) return;
+    if (currentSort.key === key) currentSort.asc = !currentSort.asc;
+    else { currentSort.key = key; currentSort.asc = true; }
+    sortAndRender();
+  });
+});
+
+function toCSV(rows) {
+  const headers = ['lead_id','name','category','address','phone','rating','reviews','website','has_website','score','tier','status'];
+  const lines = [headers.join(',')];
+  rows.forEach(l => {
+    const vals = [l.lead_id, l.name, l.category||'', l.address||'', l.phone||'', l.rating||'', l.reviews||'',
+      l.website||'', l.has_website?'yes':'no', l.score.total_score, l.score.tier, getStatus(l.lead_id)];
+    lines.push(vals.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(','));
+  });
+  return lines.join('\n');
+}
+
+function download(filename, content, type) {
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById('exportCsv').addEventListener('click', () => {
+  download('leads_filtered.csv', '﻿' + toCSV(currentFiltered), 'text/csv;charset=utf-8');
+});
+document.getElementById('exportJson').addEventListener('click', () => {
+  download('leads_filtered.json', JSON.stringify(currentFiltered, null, 2), 'application/json');
+});
+
+applyFilters();
+</script>
+</body>
+</html>
