@@ -45,6 +45,47 @@ def fetch(url, timeout=15):
                     "elapsed_s": round(time.time() - t0, 2)}
 
 
+B2B_PORTAL_WORDS = ("portal", "بوابة العملاء", "بوابة الموزعين", "customer portal", "dealer login", "distributor login", "b2b")
+DEALER_WORDS = ("dealer", "distributor", "موزع", "وكيل معتمد", "مناديب", "sales rep")
+QUOTE_WORDS = ("request a quote", "اطلب عرض سعر", "طلب عرض سعر", "get a quote", "rfq")
+MULTI_BRANCH_WORDS = ("فروعنا", "our branches", "فروع", "locations", "multiple locations")
+WAREHOUSE_WORDS = ("مصنعنا", "مصانعنا", "warehouse", "مخازن", "factory", "مصنع", "distribution center")
+TECH_HIRING_WORDS = ("erp", "it manager", "مدير تكنولوجيا المعلومات", "نظم معلومات", "data analyst",
+                      "مبرمج", "software engineer", "systems integration", "sap", "odoo")
+
+
+def detect_b2b_signals(soup, text_sample, html_text):
+    """Real regex/keyword detection on the business's OWN site - these are
+    OBSERVED SIGNALS, not proof of an internal workflow problem. score.py
+    and build_sales_packs.py must phrase anything derived from this as a
+    hypothesis, never a verified fact about internal operations."""
+    low_text = (text_sample or "").lower()
+    low_html = (html_text or "").lower()
+    combined = low_text + " " + low_html
+
+    def hit(words):
+        return any(w in combined for w in words)
+
+    return {
+        "b2b_portal_signal": hit(B2B_PORTAL_WORDS),
+        "dealer_or_distributor_signal": hit(DEALER_WORDS),
+        "quote_request_signal": hit(QUOTE_WORDS),
+        "multi_branch_signal": hit(MULTI_BRANCH_WORDS),
+        "warehouse_or_factory_signal": hit(WAREHOUSE_WORDS),
+        "careers_tech_hiring_signal": None,  # filled in by find_careers_link's follow-up fetch, see audit_one
+    }
+
+
+def find_careers_link(soup, base_url):
+    careers_words = ("careers", "jobs", "وظائف", "التوظيف", "انضم إلينا", "join us", "join our team")
+    for a_tag in soup.find_all("a", href=True):
+        link_text = (a_tag.get_text() or "").strip().lower()
+        href = a_tag["href"].lower()
+        if any(w in link_text for w in careers_words) or any(w in href for w in careers_words):
+            return urljoin(base_url, a_tag["href"])
+    return None
+
+
 def detect_platform(html_text):
     h = html_text.lower()
     if "wp-content" in h or "wp-includes" in h or "wordpress" in h:
@@ -142,6 +183,17 @@ def audit_one(site):
     entry["platform"] = detect_platform(html_text)
     entry["security_headers"] = {"hsts": bool(headers.get("Strict-Transport-Security")),
                                   "csp": bool(headers.get("Content-Security-Policy"))}
+    entry["b2b_signals"] = detect_b2b_signals(soup, sample, html_text)
+    careers_link = find_careers_link(soup, entry["final_url"])
+    entry["careers_page_link"] = careers_link
+    if careers_link:
+        try:
+            cr = fetch(careers_link, timeout=10)
+            if cr.get("ok"):
+                careers_text = cr["body"].decode("utf-8", "ignore").lower()
+                entry["b2b_signals"]["careers_tech_hiring_signal"] = any(w in careers_text for w in TECH_HIRING_WORDS)
+        except Exception:
+            pass  # careers page fetch is best-effort; leave signal as None (unknown), never guess
 
     emails = [e for e in set(re.findall(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", html_text))
               if not e.lower().endswith((".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"))]

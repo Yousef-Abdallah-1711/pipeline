@@ -95,7 +95,7 @@ __CARDS_HTML__
 
   <div class="toolbar">
     <input type="text" id="search" placeholder="بحث بالاسم أو العنوان أو الهاتف…">
-    <select id="filterTier"><option value="">كل الأولويات</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
+    <select id="filterTier"><option value="">كل الأولويات (الأعلى بين الفرصتين)</option><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
     <select id="filterWebsite"><option value="">كل الحالات</option><option value="yes">عنده موقع</option><option value="no">بدون موقع</option></select>
     <select id="filterStatus"><option value="">كل حالات المتابعة</option></select>
     <button class="action" id="exportCsv">تصدير CSV</button>
@@ -105,8 +105,10 @@ __CARDS_HTML__
   <div class="table-wrap">
     <table id="leadsTable">
       <thead><tr>
-        <th data-key="lead_id">#</th><th data-key="name">الاسم</th><th data-key="score.tier">الأولوية</th>
-        <th data-key="score.total_score">النتيجة</th><th data-key="rating">التقييم</th><th data-key="reviews">المراجعات</th>
+        <th data-key="lead_id">#</th><th data-key="name">الاسم</th>
+        <th data-key="score.score_software_fit">فرصة أتمتة/برمجيات</th>
+        <th data-key="score.score_website_opportunity">فرصة موقع إلكتروني</th>
+        <th data-key="rating">التقييم</th><th data-key="reviews">المراجعات</th>
         <th data-key="phone">الهاتف</th><th data-key="has_website">الموقع</th><th>الحالة</th>
       </tr></thead>
       <tbody id="leadsBody"></tbody>
@@ -142,7 +144,7 @@ function getPath(obj, path) {
   return path.split('.').reduce((o,k)=> (o && o[k] !== undefined) ? o[k] : null, obj);
 }
 
-let currentSort = {key: "score.total_score", asc: false};
+let currentSort = {key: "score.score_software_fit", asc: false};
 let currentFiltered = LEADS.slice();
 
 function applyFilters() {
@@ -151,7 +153,7 @@ function applyFilters() {
   const web = document.getElementById('filterWebsite').value;
   const st = document.getElementById('filterStatus').value;
   currentFiltered = LEADS.filter(l => {
-    if (tier && (l.score.tier || '') !== tier) return false;
+    if (tier && (l.score.score_software_fit_tier || '') !== tier && (l.score.score_website_opportunity_tier || '') !== tier) return false;
     if (web === 'yes' && !l.has_website) return false;
     if (web === 'no' && l.has_website) return false;
     if (st && getStatus(l.lead_id) !== st) return false;
@@ -187,8 +189,8 @@ function render() {
     tr.innerHTML = `
       <td class="mono">${l.lead_id}</td>
       <td>${l.name}</td>
-      <td><span class="badge tier-${l.score.tier||'D'}">${l.score.tier||'—'}</span></td>
-      <td class="mono">${l.score.total_score ?? '—'}</td>
+      <td><span class="badge tier-${l.score.score_software_fit_tier||'D'}">${l.score.score_software_fit_tier||'—'}</span> <span class="mono">${l.score.score_software_fit ?? '—'}</span></td>
+      <td><span class="badge tier-${l.score.score_website_opportunity_tier||'D'}">${l.score.score_website_opportunity_tier||'—'}</span> <span class="mono">${l.score.score_website_opportunity ?? '—'}</span></td>
       <td>${l.rating || 'غير متوفر'}</td>
       <td>${l.reviews || '0'}</td>
       <td class="mono">${l.phone || 'غير متوفر'}</td>
@@ -275,6 +277,14 @@ function openDetail(id) {
         <li>المنصة المستخدمة: ${a.platform || 'غير متوفر'}</li>
         <li>وقت استجابة الخادم (قياس حقيقي، ليس Lighthouse): ${a.server_response_time_s} ثانية</li>
         <li>بريد إلكتروني ظاهر بالموقع: ${a.public_email || 'غير متوفر'}</li>
+      </ul>
+      <div class="section-label">إشارات أعمال B2B (ملاحظة علنية، مش دليل مؤكد على مشكلة داخلية)</div>
+      <ul>
+        <li>إشارة فروع/مواقع متعددة: ${a.b2b_signals && a.b2b_signals.multi_branch_signal ? 'موجودة' : 'غير موجودة'}</li>
+        <li>إشارة مصنع/مخزن: ${a.b2b_signals && a.b2b_signals.warehouse_or_factory_signal ? 'موجودة' : 'غير موجودة'}</li>
+        <li>إشارة موزعين/مناديب: ${a.b2b_signals && a.b2b_signals.dealer_or_distributor_signal ? 'موجودة' : 'غير موجودة'}</li>
+        <li>بوابة عملاء/موزعين إلكترونية: ${a.b2b_signals && a.b2b_signals.b2b_portal_signal ? 'موجودة' : 'غير موجودة'}</li>
+        <li>صفحة وظائف تذكر تقنية/نظم: ${a.b2b_signals && a.b2b_signals.careers_tech_hiring_signal === true ? 'نعم' : (a.b2b_signals && a.b2b_signals.careers_tech_hiring_signal === false ? 'لا' : 'غير معروف (لم نصل لصفحة الوظائف)')}</li>
       </ul>`;
   } else if (a.audited && !a.reachable) {
     auditHtml = `<p>الموقع <span class="mono">${l.website || ''}</span> لم يستجب أثناء الفحص (غير متاح).</p>`;
@@ -282,13 +292,16 @@ function openDetail(id) {
     auditHtml = `<p class="muted">لا يوجد موقع إلكتروني حقيقي لفحصه.</p>`;
   }
 
+  function reasonsList(reasons) {
+    if (!reasons) return '<li class="muted">غير متوفر</li>';
+    return Object.values(reasons).map(r => '<li>' + r + '</li>').join('');
+  }
   const scoreBreakdown = `
-    <ul>
-      <li>قوة النشاط التجاري: ${s.business_strength} / 40</li>
-      <li>ضعف الموقع الإلكتروني (فرصة): ${s.website_weakness} / 50</li>
-      <li>إمكانية التواصل: ${s.contactability} / 10</li>
-      <li><strong>الإجمالي: ${s.total_score} / 100 — أولوية ${s.tier}</strong></li>
-    </ul>`;
+    <p><strong>فرصة أتمتة/برمجيات: ${s.score_software_fit ?? '—'} / 100 — أولوية ${s.score_software_fit_tier || '—'}</strong></p>
+    <ul>${reasonsList(s.score_software_fit_reasons)}</ul>
+    <p><strong>فرصة موقع إلكتروني: ${s.score_website_opportunity ?? '—'} / 100 — أولوية ${s.score_website_opportunity_tier || '—'}</strong></p>
+    <ul>${reasonsList(s.score_website_opportunity_reasons)}</ul>
+    <p class="muted">كل درجة مستقلة عن التانية عمدًا — موقع ضعيف مش دليل إن الشركة محتاجة نظام داخلي، والعكس صحيح.</p>`;
 
   const objectionsHtml = (p.objections||[]).map(o => `<div class="obj-item"><strong>اعتراض:</strong> ${o.objection}<br><strong>الرد:</strong> ${o.answer}</div>`).join('');
 
@@ -309,11 +322,17 @@ function openDetail(id) {
     <div class="section-label">الملخص</div>
     <p>${p.summary || ''}</p>
 
-    <div class="section-label">أهم 3 مشاكل</div>
-    <ul>${(p.top_3_problems||[]).map(x=>'<li>'+x+'</li>').join('')}</ul>
+    <div class="section-label">فرضيات الفرصة (مش حقائق مؤكدة)</div>
+    <ul>${(p.software_opportunity_hypotheses || p.top_3_problems || []).map(x=>'<li>'+x+'</li>').join('')}</ul>
+
+    ${p.evidence_gaps && p.evidence_gaps.length ? `<div class="section-label">فجوات في الأدلة</div><ul>${p.evidence_gaps.map(x=>'<li>'+x+'</li>').join('')}</ul>` : ''}
+
+    ${p.likely_buyer_role ? `<div class="section-label">صاحب القرار المحتمل</div><p>${p.likely_buyer_role}</p>` : ''}
 
     <div class="section-label">الأثر على العمل</div>
     <p>${p.business_impact || ''}</p>
+
+    ${p.discovery_questions && p.discovery_questions.length ? `<div class="section-label">أسئلة مكالمة الاكتشاف</div><ol>${p.discovery_questions.map(x=>'<li>'+x+'</li>').join('')}</ol>` : ''}
 
     ${msgBox('رسالة واتساب أولى (مسودة للمراجعة)', p.whatsapp_message || '')}
     ${waLink ? `<a class="wa-btn" href="${waLink}" target="_blank" rel="noopener">فتح واتساب (بدون إرسال تلقائي)</a>` : ''}
@@ -359,11 +378,13 @@ document.querySelectorAll('#leadsTable thead th').forEach(th => {
 });
 
 function toCSV(rows) {
-  const headers = ['lead_id','name','category','address','phone','rating','reviews','website','has_website','score','tier','status'];
+  const headers = ['lead_id','name','category','address','phone','rating','reviews','website','has_website',
+    'score_software_fit','score_software_fit_tier','score_website_opportunity','score_website_opportunity_tier','status'];
   const lines = [headers.join(',')];
   rows.forEach(l => {
     const vals = [l.lead_id, l.name, l.category||'', l.address||'', l.phone||'', l.rating||'', l.reviews||'',
-      l.website||'', l.has_website?'yes':'no', l.score.total_score, l.score.tier, getStatus(l.lead_id)];
+      l.website||'', l.has_website?'yes':'no', l.score.score_software_fit, l.score.score_software_fit_tier,
+      l.score.score_website_opportunity, l.score.score_website_opportunity_tier, getStatus(l.lead_id)];
     lines.push(vals.map(v => '"' + String(v).replace(/"/g,'""') + '"').join(','));
   });
   return lines.join('\n');

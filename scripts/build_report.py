@@ -53,19 +53,26 @@ def main():
         leads.append({**b, "score": scores.get(lid, {}), "audit": audits.get(lid, {}),
                       "pack": packs.get(lid, {}), "has_screenshot": lid in screenshotted})
 
-    tier_counts = {"A": 0, "B": 0, "C": 0, "D": 0}
+    sw_tiers = {"A": 0, "B": 0, "C": 0, "D": 0}
+    web_tiers = {"A": 0, "B": 0, "C": 0, "D": 0}
     for l in leads:
-        if l["score"].get("tier") in tier_counts:
-            tier_counts[l["score"].get("tier")] += 1
+        if l["score"].get("score_software_fit_tier") in sw_tiers:
+            sw_tiers[l["score"]["score_software_fit_tier"]] += 1
+        if l["score"].get("score_website_opportunity_tier") in web_tiers:
+            web_tiers[l["score"]["score_website_opportunity_tier"]] += 1
     no_website_count = sum(1 for l in leads if not l.get("has_website"))
+    has_phone_count = sum(1 for l in leads if l.get("phone"))
+    has_decision_maker_count = sum(1 for l in leads if l.get("decision_maker_name"))
     rts = [l["audit"].get("server_response_time_s") for l in leads if l["audit"].get("server_response_time_s") is not None]
     avg_rt = round(sum(rts) / len(rts), 2) if rts else None
 
     cards = [
         (len(leads), "إجمالي العملاء (بعد التحقق من المدينة والمجال)"),
-        (tier_counts["A"], "أولوية A"), (tier_counts["B"], "أولوية B"),
-        (tier_counts["C"], "أولوية C"), (tier_counts["D"], "أولوية D"),
+        (sw_tiers["A"] + sw_tiers["B"], "فرصة أتمتة/برمجيات واعدة (A+B)"),
+        (web_tiers["A"] + web_tiers["B"], "فرصة موقع إلكتروني واعدة (A+B)"),
         (no_website_count, "بدون موقع إلكتروني حقيقي"),
+        (has_phone_count, "برقم هاتف عام موثق"),
+        (has_decision_maker_count, "بصاحب قرار محدد (موثق يدويًا)"),
         (f"{avg_rt if avg_rt is not None else '—'}s", "متوسط وقت استجابة الخادم (قياس حقيقي)"),
         (len(excluded_city), "تم استبعادهم (مدينة أخرى)"),
         (len(excluded_niche), "تم استبعادهم (خارج المجال)"),
@@ -94,7 +101,11 @@ def main():
     print(f"Wrote leads-report.html, length: {len(html)}")
 
     headers = ["lead_id", "name", "category", "address", "phone", "rating", "reviews",
-               "website", "facebook", "has_website", "reachable", "score", "tier", "status", "notes"]
+               "website", "facebook", "has_website", "reachable",
+               "score_software_fit", "score_software_fit_tier",
+               "score_website_opportunity", "score_website_opportunity_tier",
+               "decision_maker_name", "decision_maker_title", "decision_maker_confidence",
+               "status", "notes"]
     rows = []
     for b in businesses:
         lid = b["lead_id"]
@@ -106,13 +117,24 @@ def main():
             "website": b.get("website") or "غير متوفر", "facebook": b.get("facebook") or "",
             "has_website": "نعم" if b.get("has_website") else "لا",
             "reachable": "نعم" if a.get("reachable") else ("لا" if a.get("audited") else "غير مطبق"),
-            "score": s.get("total_score", ""), "tier": s.get("tier", ""), "status": "جديد", "notes": "",
+            "score_software_fit": s.get("score_software_fit", ""),
+            "score_software_fit_tier": s.get("score_software_fit_tier", ""),
+            "score_website_opportunity": s.get("score_website_opportunity", ""),
+            "score_website_opportunity_tier": s.get("score_website_opportunity_tier", ""),
+            "decision_maker_name": b.get("decision_maker_name") or "غير متوفر",
+            "decision_maker_title": b.get("decision_maker_title") or "غير متوفر",
+            "decision_maker_confidence": b.get("decision_maker_confidence") or "unknown",
+            "status": "جديد", "notes": "",
         })
     with open(os.path.join(base, "leads.csv"), "w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=headers)
         w.writeheader()
         w.writerows(rows)
     print(f"Wrote leads.csv with {len(rows)} rows")
+
+    with open(os.path.join(base, "leads.json"), "w", encoding="utf-8") as f:
+        json.dump(leads, f, ensure_ascii=False, indent=2)
+    print(f"Wrote leads.json with {len(leads)} records")
 
 
 if __name__ == "__main__":

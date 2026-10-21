@@ -20,7 +20,7 @@ Usage:
       # re-maps screenshots/<old_lead_id>.png -> <new_lead_id>.png after a
       # re-filter changed lead IDs, matching by website domain.
 """
-import json, re, glob, os, argparse, shutil
+import json, re, glob, os, argparse, shutil, time
 from urllib.parse import urlparse
 
 AR_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩", "0123456789")
@@ -90,6 +90,15 @@ def cmd_parse(args):
                 "source_query": os.path.basename(fp), "name": r.get("name"),
                 "place_url": r.get("placeUrl"), "cid": cid, "lat": lat, "lng": lng,
                 "website_raw": r.get("website"), **parsed,
+                "source_name": "google_maps_browser",
+                "retrieved_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(os.path.getmtime(fp))),
+                # Decision-maker info is never scraped automatically (LinkedIn/authwall
+                # sources are not implemented - see references/sources.md). Filled in
+                # manually per-lead during qualification, left explicitly unknown here.
+                "decision_maker_name": None,
+                "decision_maker_title": None,
+                "decision_maker_source_url": None,
+                "decision_maker_confidence": "unknown",
             })
     print(f"Total raw rows: {len(all_rows)}")
 
