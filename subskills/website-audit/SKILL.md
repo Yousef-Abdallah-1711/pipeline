@@ -15,6 +15,12 @@ Preferred invocation:
 /lead-hunter website-audit https://example.com
 ```
 
+In Codex, invoke the installed skill with:
+
+```text
+$lead-hunter website-audit https://example.com
+```
+
 The same route may be invoked naturally, for example: “اعمل تدقيق كامل للموقع ده وجهّز التقرير والـPDF للعميل: https://example.com”. If the user gives the URL without a command name but clearly asks for a complete website audit, use this workflow.
 
 The command runner is `scripts/run_site_audit.py`. When this skill is installed in the lead-hunter folder, run:

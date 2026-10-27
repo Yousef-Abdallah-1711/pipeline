@@ -38,6 +38,8 @@ For a complete audit package for one supplied website, use:
 /lead-hunter website-audit https://example.com
 ```
 
+In Codex, invoke the installed skill as `$lead-hunter website-audit https://example.com`.
+
 This creates a full offline HTML audit, structured findings and source records, an implementation roadmap, and a separate client-ready PDF. The single-site route does not run Maps lead discovery or outreach.
 
 Normal lead-generation runs continue to write to `./lead-hunter-output/{niche}-{city}/` next to the current workspace.
