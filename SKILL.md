@@ -1,11 +1,21 @@
 ---
 name: lead-hunter
-description: Use when the user asks to find leads, generate a prospect list, run a B2B lead-generation audit for a local business niche and city, or says "lead hunter", "jeeb leads", "جيب لي عملاء", "/lead-hunter". Triggers on requests to discover businesses in a niche/city via Google Maps, audit their websites, score opportunity, and prepare outreach messages.
+description: Use when the user asks to find leads, generate a prospect list, run a B2B lead-generation audit for a local business niche and city, or audit one supplied website URL. Also use for "lead hunter", "jeeb leads", "جيب لي عملاء", "/lead-hunter", and the website-audit command.
 ---
 
 # Lead Hunter
 
 Autonomous local-business lead-generation: discover real businesses in a niche+city via Google Maps (or Places API when a key exists — see `scripts/sources.py`), audit every real website they have with measured (not invented) data, score **two independent opportunities per lead** (software/digitization fit, and website quality — a weak website does not prove software need, and vice versa), and draft ready-to-review outreach (never auto-sent). Produces an interactive self-contained HTML report + CSV + JSON + research-summary/sources/limitations docs per run.
+
+## Single-site website audit sub-skill
+
+For one supplied website URL and a request for the complete site audit package, use the dedicated sub-skill at `subskills/website-audit/SKILL.md`. Invoke it with:
+
+```text
+/lead-hunter website-audit https://example.com
+```
+
+It creates a complete evidence-backed offline HTML audit, structured findings and source records, a prioritized roadmap, and a separate client-ready PDF. This route does not run Google Maps discovery or the lead-scoring/outreach pipeline; the existing multi-lead workflow below remains unchanged.
 
 Two built-in verticals (`--vertical` on `build_sales_packs.py`): `b2b_software` (default — Egyptian manufacturers/distributors/logistics/field-service prospects for custom software & automation, see `references/industry-playbooks.md`) and `translation` (the original translation-office website-selling angle, kept verbatim). Both share the same discovery/audit/scoring/report engine.
 

@@ -30,9 +30,17 @@ Drop this folder into `~/.claude/skills/lead-hunter/` (Claude Code) or `~/.agent
 
 ## Usage
 
-> find leads for مصانع مواد غذائية in الإسكندرية وبرج العرب
+Find leads in a niche and city with a natural-language request, such as a request for food manufacturers in Alexandria and Borg El Arab.
 
-or any phrasing matching `SKILL.md`'s description trigger. Output lands in `./lead-hunter-output/{niche}-{city}/` next to wherever you run it — never inside this skill folder.
+For a complete audit package for one supplied website, use:
+
+```text
+/lead-hunter website-audit https://example.com
+```
+
+This creates a full offline HTML audit, structured findings and source records, an implementation roadmap, and a separate client-ready PDF. The single-site route does not run Maps lead discovery or outreach.
+
+Normal lead-generation runs continue to write to `./lead-hunter-output/{niche}-{city}/` next to the current workspace.
 
 ## Testing
 
@@ -62,6 +70,10 @@ references/
   industry-playbooks.md          # Egypt B2B software-prospect playbooks (9 sectors)
   sources.md                     # which discovery sources are actually usable, and why
   upgrade-plan.md                 # v1->v2 gap analysis and design decisions
+scripts/run_site_audit.py         # uncapped-by-default public-site crawler + HTML/PDF audit package
+requirements-site-audit.txt       # requests and Playwright dependencies for the site-audit runner
+subskills/
+  website-audit/SKILL.md        # single-site audit command and client-report workflow
 tests/
   test_discover.py, test_score.py, test_query_templates.py
 ```
